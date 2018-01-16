@@ -41,8 +41,9 @@ export function normalizeLocation (
   router: ?VueRouter
 ): Location {
   let next: Location = typeof raw === 'string' ? { path: raw } : raw
-  // named target  制定目标
+  // named target  命名的目标
   //_normalized ?
+  //相当于raw.name  raw,_normalized 应该是标志是否需要处理的标记
   if (next.name || next._normalized) {
     return next
   }
@@ -61,6 +62,7 @@ export function normalizeLocation (
       const rawPath = current.matched[current.matched.length - 1].path  //匹配到的组件的最后一个
       next.path = fillParams(rawPath, params, `path ${current.path}`)
     } else if (process.env.NODE_ENV !== 'production') {
+      //wran  相关参数的导航需要一个current route
       warn(false, `relative params navigation requires a current route.`)
     }
     return next

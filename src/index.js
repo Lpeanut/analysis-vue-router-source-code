@@ -1,13 +1,13 @@
 /* @flow */
 
 import { install } from './install'
-import { START } from './util/route'
+import { START } from './util/route'  //初始化路由
 import { assert } from './util/warn'
 import { inBrowser } from './util/dom'
-import { cleanPath } from './util/path'
+import { cleanPath } from './util/path'   //双斜杠转单斜杠
 import { createMatcher } from './create-matcher'
 import { normalizeLocation } from './util/location'
-import { supportsPushState } from './util/push-state'
+import { supportsPushState } from './util/push-state'  //是否支持pushState
 
 import { HashHistory } from './history/hash'
 import { HTML5History } from './history/html5'
@@ -32,22 +32,24 @@ export default class VueRouter {
   resolveHooks: Array<?NavigationGuard>;
   afterHooks: Array<?AfterNavigationHook>;
 
+  //RouterOptions 就是我们在使用vue-router时，实例化vueRouter对象时传入的对象
   constructor (options: RouterOptions = {}) {
     this.app = null
     this.apps = []
     this.options = options
-    this.beforeHooks = []
+    this.beforeHooks = []  //三个钩子
     this.resolveHooks = []
     this.afterHooks = []
     this.matcher = createMatcher(options.routes || [], this)
 
-    let mode = options.mode || 'hash'
+    let mode = options.mode || 'hash'  //默认hash模式
+    //当浏览器不支持 history.pushState 控制路由是否应该回退到 hash 模式。默认值为 true
     this.fallback = mode === 'history' && !supportsPushState && options.fallback !== false
     if (this.fallback) {
-      mode = 'hash'
+      mode = 'hash'    //如果非hash模式，并且不支持pushState （ fallback默认!==false ） 回退到hash模式
     }
     if (!inBrowser) {
-      mode = 'abstract'
+      mode = 'abstract'  //非浏览器环境 强制转换成abstract
     }
     this.mode = mode
 
@@ -67,7 +69,7 @@ export default class VueRouter {
         }
     }
   }
-
+  // raw location 原位置？
   match (
     raw: RawLocation,
     current?: Route,
@@ -81,6 +83,7 @@ export default class VueRouter {
   }
 
   init (app: any /* Vue component instance */) {
+    //如果install.installed == false  报错  在创建根实例之前没有调用 Vue.use(VueRouter)
     process.env.NODE_ENV !== 'production' && assert(
       install.installed,
       `not installed. Make sure to call \`Vue.use(VueRouter)\` ` +
@@ -88,7 +91,7 @@ export default class VueRouter {
     )
 
     this.apps.push(app)
-
+    // main app 已经初始化了
     // main app already initialized.
     if (this.app) {
       return
@@ -110,14 +113,14 @@ export default class VueRouter {
         setupHashListener
       )
     }
-
+    //监听histroy route
     history.listen(route => {
       this.apps.forEach((app) => {
         app._route = route
       })
     })
   }
-
+  //注册钩子
   beforeEach (fn: Function): Function {
     return registerHook(this.beforeHooks, fn)
   }
@@ -157,7 +160,7 @@ export default class VueRouter {
   forward () {
     this.go(1)
   }
-
+  //待分析
   getMatchedComponents (to?: RawLocation | Route): Array<any> {
     const route: any = to
       ? to.matched
@@ -200,7 +203,7 @@ export default class VueRouter {
       location,
       route,
       href,
-      // for backwards compat
+      // for backwards compat  //向后兼容
       normalizedTo: location,
       resolved: route
     }
@@ -214,6 +217,9 @@ export default class VueRouter {
   }
 }
 
+//注册钩子 传入一个钩子数组和回调函数，将事件注册进数组里，并返回这个函数
+//回调函数执行会在list中将第一个自己删除
+//为什么不直接执行？反而是注册进去，再取出来执行
 function registerHook (list: Array<any>, fn: Function): Function {
   list.push(fn)
   return () => {
@@ -222,6 +228,7 @@ function registerHook (list: Array<any>, fn: Function): Function {
   }
 }
 
+//根据base、fullPath、mode 返回一个href
 function createHref (base: string, fullPath: string, mode) {
   var path = mode === 'hash' ? '#' + fullPath : fullPath
   return base ? cleanPath(base + '/' + path) : path
