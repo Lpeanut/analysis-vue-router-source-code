@@ -1,6 +1,6 @@
 /* @flow */
 
-import type Router from '../index'
+import type Router from '../index'   //先理解为index页面到处的default值
 import { History } from './base'
 import { cleanPath } from '../util/path'
 import { START } from '../util/route'
@@ -71,10 +71,12 @@ export class HTML5History extends History {
   }
 }
 
+//返回出去base的url path
 export function getLocation (base: string): string {
-  let path = window.location.pathname
-  if (base && path.indexOf(base) === 0) {
+  let path = window.location.pathname  //获取根域名后的path路径（不带搜索条件和hash值）
+  if (base && path.indexOf(base) === 0) {  //除去base
     path = path.slice(base.length)
   }
+  //返回去除base的path + search字符串 + hash字符串
   return (path || '/') + window.location.search + window.location.hash
 }

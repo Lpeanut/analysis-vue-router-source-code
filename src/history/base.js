@@ -22,7 +22,8 @@ export class History {
   readyCbs: Array<Function>;
   readyErrorCbs: Array<Function>;
   errorCbs: Array<Function>;
-
+  
+  // 由子类实现
   // implemented by sub-classes
   +go: (n: number) => void;
   +push: (loc: RawLocation) => void;
@@ -192,13 +193,17 @@ export class History {
   }
 }
 
+//
 function normalizeBase (base: ?string): string {
   if (!base) {
     if (inBrowser) {
+      // 
       // respect <base> tag
       const baseEl = document.querySelector('base')
       base = (baseEl && baseEl.getAttribute('href')) || '/'
       // strip full URL origin
+      //匹配规则：http或https开头 + :// + 除/以外的任意字符且可以重复 直到匹配到'/'为止
+      //目的：将http/https:www.baidu.com/a/ => /a/
       base = base.replace(/^https?:\/\/[^\/]+/, '')
     } else {
       base = '/'
