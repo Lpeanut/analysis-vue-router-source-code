@@ -1,5 +1,14 @@
 /* @flow */
 
+/**
+ * 1.HashHistory继承自Histroy
+ * 2.检查base值如果this.base没有#  添加#并repace一下
+ * 3.启动Listeners，如果支持Scroll，启动scroll。 添加popstate或者hashchange的监听，取决于是否支持pushState 
+ * 4.go push  replace方法类似于html5 后两个在不支持pushState的时候略微有些改动：push方法 直接调用location.hash 来改变url
+ *   replace方法直接调用location.replace来调用
+ * 5.getHash方法 获取#后面的hash字符串
+ */
+
 import type Router from '../index'
 import { History } from './base'
 import { cleanPath } from '../util/path'
@@ -12,7 +21,7 @@ export class HashHistory extends History {
     super(router, base)
     // 检查历史回退深度链接
     // check history fallback deeplinking
-    //如果this.base没有#  添加#并repace一下
+    // 如果this.base没有#  添加#并repace一下
     if (fallback && checkFallback(this.base)) {
       return
     }
