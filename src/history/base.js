@@ -36,17 +36,18 @@ export class History {
     this.base = normalizeBase(base)
     // start with a route object that stands for "nowhere"
     this.current = START
-    this.pending = null
+    this.pending = null  //等待
     this.ready = false
     this.readyCbs = []
     this.readyErrorCbs = []
     this.errorCbs = []
   }
-
+  //监听
   listen (cb: Function) {
     this.cb = cb
   }
-
+  //ready的回调函数 如果ready = true 执行回调函数，否则将回调函数放入readyCbs的数组中，
+  //ready = true，同时也会把errorCb放入readyErrorCbs数组内
   onReady (cb: Function, errorCb: ?Function) {
     if (this.ready) {
       cb()
@@ -57,24 +58,28 @@ export class History {
       }
     }
   }
-
+  //将onError的回调函数放入errorCbs的数组中
   onError (errorCb: Function) {
     this.errorCbs.push(errorCb)
   }
 
+  //路由的过度函数(地址path,completeCb,abortCb)
   transitionTo (location: RawLocation, onComplete?: Function, onAbort?: Function) {
-    const route = this.router.match(location, this.current)
+    const route = this.router.match(location, this.current)  //获取匹配location的路由
+    //确认过渡
     this.confirmTransition(route, () => {
-      this.updateRoute(route)
-      onComplete && onComplete(route)
-      this.ensureURL()
+      this.updateRoute(route) //更新路由
+      onComplete && onComplete(route) //执行completeCb
+      this.ensureURL()  //确定url地址
 
       // fire ready cbs once
+      // 执行readyCbs的回调函数队列
       if (!this.ready) {
         this.ready = true
         this.readyCbs.forEach(cb => { cb(route) })
       }
     }, err => {
+      //如果终止，执行readyErrorCbs的回调函数队列
       if (onAbort) {
         onAbort(err)
       }
@@ -84,10 +89,10 @@ export class History {
       }
     })
   }
-
+  //确认过度函数(Route,completeCb,abortCb)
   confirmTransition (route: Route, onComplete: Function, onAbort?: Function) {
     const current = this.current
-    const abort = err => {
+    const abort = err => {  //abort函数  先执行errorCbs队列的回调 然后执行onAbortCb
       if (isError(err)) {
         if (this.errorCbs.length) {
           this.errorCbs.forEach(cb => { cb(err) })
@@ -101,6 +106,7 @@ export class History {
     if (
       isSameRoute(route, current) &&
       // in the case the route map has been dynamically appended to
+      // 动态添加route map
       route.matched.length === current.matched.length
     ) {
       this.ensureURL()
@@ -113,6 +119,12 @@ export class History {
       activated
     } = resolveQueue(this.current.matched, route.matched)
 
+    //队列
+      // 抽离组件守卫
+      // 全局的beforeRouter钩子
+      // 提取update钩子
+      // beforeEnter钩子进入组件内
+      // 解析异步组件
     const queue: Array<?NavigationGuard> = [].concat(
       // in-component leave guards
       extractLeaveGuards(deactivated),
@@ -126,12 +138,15 @@ export class History {
       resolveAsyncComponents(activated)
     )
 
-    this.pending = route
+    this.pending = route 
+    // iterator 迭代器
     const iterator = (hook: NavigationGuard, next) => {
+      //为什么这里这样判断
       if (this.pending !== route) {
         return abort()
       }
       try {
+        
         hook(route, current, (to: any) => {
           if (to === false || isError(to)) {
             // next(false) -> abort navigation, ensure current URL
@@ -153,6 +168,7 @@ export class History {
             }
           } else {
             // confirm transition and pass on the value
+            // 确认转换并传值
             next(to)
           }
         })
@@ -183,6 +199,7 @@ export class History {
     })
   }
 
+  //更新路由，然后如果有回调，先执行回调。如果有afterHooks钩子，执行afterHooks钩子
   updateRoute (route: Route) {
     const prev = this.current
     this.current = route
@@ -193,7 +210,7 @@ export class History {
   }
 }
 
-//
+//处理base字符串 规范化一下
 function normalizeBase (base: ?string): string {
   if (!base) {
     if (inBrowser) {
@@ -217,6 +234,8 @@ function normalizeBase (base: ?string): string {
   return base.replace(/\/$/, '')
 }
 
+//解析队列，传入当前路由和下一个路由
+//应该返回 已经更新的  待激活的  和  应该解散的路由信息
 function resolveQueue (
   current: Array<RouteRecord>,
   next: Array<RouteRecord>
@@ -226,19 +245,21 @@ function resolveQueue (
   deactivated: Array<RouteRecord>
 } {
   let i
+  //max获取当前路由记录和next记录中较大的那个
   const max = Math.max(current.length, next.length)
+  //应该是想要获取相同的路由记录
   for (i = 0; i < max; i++) {
     if (current[i] !== next[i]) {
       break
     }
   }
   return {
-    updated: next.slice(0, i),
-    activated: next.slice(i),
-    deactivated: current.slice(i)
+    updated: next.slice(0, i),  // 已更新的
+    activated: next.slice(i),   //  激活的
+    deactivated: current.slice(i) // 解散的
   }
 }
-
+//提取守卫
 function extractGuards (
   records: Array<RouteRecord>,
   name: string,
@@ -256,6 +277,7 @@ function extractGuards (
   return flatten(reverse ? guards.reverse() : guards)
 }
 
+//提取守卫
 function extractGuard (
   def: Object | Function,
   key: string
@@ -318,6 +340,7 @@ function bindEnterGuard (
 }
 
 function poll (
+  //流不能推断出这是一个函数
   cb: any, // somehow flow cannot infer this is a function
   instances: Object,
   key: string,

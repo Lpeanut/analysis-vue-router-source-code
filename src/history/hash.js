@@ -10,7 +10,9 @@ import { pushState, replaceState, supportsPushState } from '../util/push-state'
 export class HashHistory extends History {
   constructor (router: Router, base: ?string, fallback: boolean) {
     super(router, base)
+    // 检查历史回退深度链接
     // check history fallback deeplinking
+    //如果this.base没有#  添加#并repace一下
     if (fallback && checkFallback(this.base)) {
       return
     }
@@ -19,6 +21,7 @@ export class HashHistory extends History {
 
   // this is delayed until the app mounts
   // to avoid the hashchange listener being fired too early
+  //延迟到app mounted 以后再启动监听，以防hashchage事件监听启动的太早
   setupListeners () {
     const router = this.router
     const expectScroll = router.options.scrollBehavior
@@ -27,7 +30,7 @@ export class HashHistory extends History {
     if (supportsScroll) {
       setupScroll()
     }
-
+    //如果支持pushState 就监听popstate  如果不支持 就监听hashchange
     window.addEventListener(supportsPushState ? 'popstate' : 'hashchange', () => {
       const current = this.current
       if (!ensureSlash()) {
@@ -78,6 +81,7 @@ export class HashHistory extends History {
   }
 }
 
+//如果base没有/#  给base 加上/#
 function checkFallback (base) {
   const location = getLocation(base)
   if (!/^\/#/.test(location)) {
@@ -88,6 +92,8 @@ function checkFallback (base) {
   }
 }
 
+//判断获取的hash值不是以/开头的  返回布尔值  
+//如果不是，在hash前面补上/ 并调用replaceHash
 function ensureSlash (): boolean {
   const path = getHash()
   if (path.charAt(0) === '/') {
@@ -97,7 +103,9 @@ function ensureSlash (): boolean {
   return false
 }
 
+//获取#后面的内容 缺省值为''
 export function getHash (): string {
+  //不能使用window.localtion.hash,因为在浏览器中这个方法不具有一致性，firefox会预先对它进行解码
   // We can't use window.location.hash here because it's not
   // consistent across browsers - Firefox will pre-decode it!
   const href = window.location.href
@@ -105,6 +113,8 @@ export function getHash (): string {
   return index === -1 ? '' : href.slice(index + 1)
 }
 
+//1.base=获取地址栏中#以前的部分
+//2.返回 base + # + path
 function getUrl (path) {
   const href = window.location.href
   const i = href.indexOf('#')
@@ -112,6 +122,7 @@ function getUrl (path) {
   return `${base}#${path}`
 }
 
+//支持pushState 调用pushState方法 否则使用location.hash方法  repalceHash同理
 function pushHash (path) {
   if (supportsPushState) {
     pushState(getUrl(path))
@@ -124,6 +135,7 @@ function replaceHash (path) {
   if (supportsPushState) {
     replaceState(getUrl(path))
   } else {
+    //不会刷新页面，并且历史记录是replace的 与histroy 的 replaceState 表现一致
     window.location.replace(getUrl(path))
   }
 }
